@@ -1,7 +1,13 @@
 import AnchorMixer from "./anchor";
 
-const code_engine = (function () {
+/**
+ * This is where all the implementations will take place
+ */
+
+const beautify = (function () {
+  //function for my interface
   // add modal
+
   function addModal(option) {
     let { title, content, buttonTitle, footer, duration, modal_name } = option;
 
@@ -12,10 +18,10 @@ const code_engine = (function () {
     duration = duration === undefined ? 1000 : duration;
     modal_name = modal_name === undefined ? create_modal_name() : modal_name;
 
-    const footerBtn = `<button type="button" class="btn btn-danger" data-dismiss="modal"> Close </button>
-             <button type="button" class="btn btn-success">${buttonTitle}</button>`;
+    const footerBtn = `<button type="button" class="btn btn-danger" data-dismiss="modal" >Close</button>
+    <button type="button" class="btn btn-success">${buttonTitle}</button>`;
 
-    const modal_content = `<div class="modal" tabindex="-1" id="newModal">
+    const modal_content = `<div class="modal" tabindex="-1" id="${modal_name}" data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -37,7 +43,7 @@ const code_engine = (function () {
     const divElement = document.createElement("div");
     divElement.innerHTML = modal_content;
     document.body.appendChild(divElement);
-    $("#newModal").modal("show");
+    $(`#${modal_name}`).modal("show");
   }
 
   // create modal name function
@@ -45,36 +51,55 @@ const code_engine = (function () {
     const date = new Date();
     const currentTime = date.getTime();
     modal_name = `modal_` + currentTime;
+
     return modal_name;
   };
 
+  const add_spinner = () => {
+    const spinner = `<div class="spinner-border" role="status">
+  <span class="visually-hidden">Loading...</span>
+</div>`;
+
+    const spinnerEl = document.createElement("div");
+    spinnerEl.innerHTML = spinner;
+    document.body.appendChild(spinnerEl);
+  };
+
+  function removeModal(modal_name) {
+    $(`#${modal_name}`).modal("hide");
+  }
+
   return {
-    addModal,
+    addModal: addModal,
+    removeModal: removeModal,
+    add_spinner: add_spinner,
   };
 })();
 
 /**
  * Custom Library/Interface to make available for interaction
  */
-const CustomJS = (function (anchorMixer, code_engine) {
+
+const CustomJS = (function (anchorMixer, beautify) {
   let dependencies = anchorMixer.load_dependencies();
 
-  //once the DOM has been loaded completely
+  //The DOMContentLoaded event listener is added to ensure that the code inside it executes once the DOM (Document Object Model) has been completely loaded.
+
   document.addEventListener("DOMContentLoaded", function () {
     anchorMixer.initializeAnchor(dependencies);
   });
 
-  //create a new CustomJs app
-  //and return the methods to use
+  // It exposes interface(api)
   async function createApp() {
     dependencies = await dependencies;
-
-    // console.log(dependencies)
+    // console.log(dependencies);
 
     if (dependencies) {
-      //load the methods
+      //expose the methods to the html file
       return {
-        addModal: code_engine.addModal,
+        addModal: beautify.addModal,
+        removeModal: beautify.removeModal,
+        add_spinner: beautify.add_spinner,
       };
     }
   }
@@ -82,6 +107,6 @@ const CustomJS = (function (anchorMixer, code_engine) {
   return {
     createApp: createApp,
   };
-})(new AnchorMixer(), code_engine);
+})(new AnchorMixer(), beautify);
 
-window.CustomJS = CustomJS;
+window.CustomJS = CustomJS; // making code accessible globally in the browser environment
